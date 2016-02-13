@@ -20,7 +20,9 @@ defmodule Trelm.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", Trelm do
-  #   pipe_through :api
-  # end
+  scope "/api", Trelm do
+    pipe_through :api
+
+    resources "/tests", TestController, except: [:new, :edit]
+  end
 end
