@@ -6,7 +6,9 @@ import Html.Events exposing (..)
 
 import String exposing (concat, toLower)
 
-import StartApp.Simple as StartApp
+import StartApp
+import Effects exposing (Effects, Never)
+import Task exposing (Task)
 
 type Status = Pending | Running | Passed | Failed
 
@@ -32,9 +34,9 @@ runOneTest model id =
 -- MODEL
 
 type alias Test =
-  { id: Int,
-    status: Status,
-    description: String
+  { id: Int
+  , status: Status
+  , description: String
   }
 
 type alias Model =
@@ -42,18 +44,41 @@ type alias Model =
     tests: List Test
   }
 
-initialModel : Model
-initialModel =
-  { tests =
-    [
-      { id = 1, status = Pending, description = "commas are rotated properly" },
-      { id = 2, status = Pending, description = "exclamation points stand up straight" },
-      { id = 3, status = Pending, description = "run-on sentences don't run forever" },
-      { id = 4, status = Pending, description = "question marks curl down, not up" },
-      { id = 5, status = Pending, description = "semicolons are adequately waterproof" },
-      { id = 6, status = Pending, description = "capital letters can do yoga" }
-    ]
-  }
+init : (Model, Effects Action)
+init =
+  let
+    model =
+      {
+        tests =
+          [
+            { id = 1
+            , status = Pending
+            , description = "commas are rotated properly"
+            },
+            { id = 2
+            , status = Pending
+            , description = "exclamation points stand up straight"
+            },
+            { id = 3
+            , status = Pending
+            , description = "run-on sentences don't run forever"
+            },
+            { id = 4
+            , status = Pending
+            , description = "question marks curl down, not up"
+            },
+            { id = 5
+            , status = Pending
+            , description = "semicolons are adequately waterproof"
+            },
+            { id = 6
+            , status = Pending
+            , description = "capital letters can do yoga"
+            }
+          ]
+      }
+  in
+    (model, Effects.none)
 
 classify : Status -> String
 classify status =
@@ -74,11 +99,11 @@ pageHeader address =
   div [ ]
     [ button
         [ class "btn btn-sm btn-warning pull-right", onClick address Reset ]
-        [ text "Reset Tests" ],
-      button
+        [ text "Reset Tests" ]
+    , button
         [ class "btn btn-sm btn-info pull-right", onClick address RunAllTests ]
-        [ text "Run All Tests" ],
-      h1 [ ] [ text "Test Runner"]
+        [ text "Run All Tests" ]
+    ,  h1 [ ] [ text "Test Runner"]
     ]
 
 testRow : Signal.Address Action -> Test -> Html
@@ -91,12 +116,12 @@ testRow address test =
             [ classList [
                 ("btn btn-sm btn-info", True),
                 ("disabled", (test.status == Running))
-              ],
-              onClick address (RunTest test.id)
+              ]
+            , onClick address (RunTest test.id)
             ]
-            [ text "Run" ] ],
-      td [ class "description" ] [ text test.description ],
-      td [ class "status" ] [ text (toString test.status) ]
+            [ text "Run" ] ]
+    , td [ class "description" ] [ text test.description ]
+    , td [ class "status" ] [ text (toString test.status) ]
     ]
 
 testRows : Signal.Address Action -> List Test -> List Html
@@ -132,14 +157,14 @@ totalsFoot tests =
           [ colspan 3 ]
           [ span
               [ class "passed" ]
-              [ text (concat ["Passed: ", (toString totals.passed)]) ],
-            span
+              [ text (concat ["Passed: ", (toString totals.passed)]) ]
+          , span
               [ class "failed" ]
-              [ text (concat ["Failed: ", (toString totals.failed)]) ],
-            span
+              [ text (concat ["Failed: ", (toString totals.failed)]) ]
+          , span
               [ class "running" ]
-              [ text (concat ["Running: ", (toString totals.running)]) ],
-            span
+              [ text (concat ["Running: ", (toString totals.running)]) ]
+          , span
               [ class "pending" ]
               [ text (concat ["Pending: ", (toString totals.pending)]) ]
           ]
@@ -152,15 +177,15 @@ testTable address model =
         [ ]
         [ tr
             [ ]
-            [ th [ class "controls" ] [ ],
-              th [ class "description" ] [ text "Test" ],
-              th [ class "status" ] [ text "Status" ]
+            [ th [ class "controls" ] [ ]
+            , th [ class "description" ] [ text "Test" ]
+            , th [ class "status" ] [ text "Status" ]
             ]
-        ],
-      tbody
+        ]
+    , tbody
         [ ]
-        (testRows address model.tests),
-      tfoot
+        (testRows address model.tests)
+    , tfoot
         [ ]
         [ (totalsFoot model.tests) ]
     ]
@@ -171,8 +196,8 @@ view address model =
     [ class "container" ]
     [ div
         [ class "row" ]
-        [ div [ class "col-xs-12" ] [ (pageHeader address) ] ],
-      div
+        [ div [ class "col-xs-12" ] [ (pageHeader address) ] ]
+    , div
         [ class "row" ]
         [ div [ class "col-xs-12" ] [ (testTable address model) ] ]
     ]
@@ -185,25 +210,35 @@ type Action
   | RunAllTests
   | Reset
 
-update : Action -> Model -> Model
+update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp ->
-      model
+      (model, Effects.none)
 
     RunTest id ->
-      runOneTest model id
+      (runOneTest model id, Effects.none)
 
     RunAllTests ->
-      runAllTests model
+      (runAllTests model, Effects.none)
 
     Reset ->
-      initialModel
+      (fst init, Effects.none)
+
+-- APP
+
+app =
+  StartApp.start
+    { init = init
+    , update = update
+    , view = view
+    , inputs = []
+    }
 
 main : Signal Html
 main =
-  StartApp.start
-    { model = initialModel,
-      view = view,
-      update = update
-    }
+  app.html
+
+port tasks : Signal (Task Never ())
+port tasks =
+  app.tasks

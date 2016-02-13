@@ -6,6 +6,7 @@ Elm.TestRunner.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
@@ -13,8 +14,9 @@ Elm.TestRunner.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $StartApp$Simple = Elm.StartApp.Simple.make(_elm),
-   $String = Elm.String.make(_elm);
+   $StartApp = Elm.StartApp.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Task = Elm.Task.make(_elm);
    var _op = {};
    var Reset = {ctor: "Reset"};
    var RunAllTests = {ctor: "RunAllTests"};
@@ -119,21 +121,26 @@ Elm.TestRunner.make = function (_elm) {
               _U.list([A2($Html.div,_U.list([$Html$Attributes.$class("col-xs-12")]),_U.list([A2(testTable,address,model)]))]))]));
    });
    var Pending = {ctor: "Pending"};
-   var initialModel = {tests: _U.list([{id: 1,status: Pending,description: "commas are rotated properly"}
-                                      ,{id: 2,status: Pending,description: "exclamation points stand up straight"}
-                                      ,{id: 3,status: Pending,description: "run-on sentences don\'t run forever"}
-                                      ,{id: 4,status: Pending,description: "question marks curl down, not up"}
-                                      ,{id: 5,status: Pending,description: "semicolons are adequately waterproof"}
-                                      ,{id: 6,status: Pending,description: "capital letters can do yoga"}])};
+   var init = function () {
+      var model = {tests: _U.list([{id: 1,status: Pending,description: "commas are rotated properly"}
+                                  ,{id: 2,status: Pending,description: "exclamation points stand up straight"}
+                                  ,{id: 3,status: Pending,description: "run-on sentences don\'t run forever"}
+                                  ,{id: 4,status: Pending,description: "question marks curl down, not up"}
+                                  ,{id: 5,status: Pending,description: "semicolons are adequately waterproof"}
+                                  ,{id: 6,status: Pending,description: "capital letters can do yoga"}])};
+      return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+   }();
    var update = F2(function (action,model) {
       var _p2 = action;
       switch (_p2.ctor)
-      {case "NoOp": return model;
-         case "RunTest": return A2(runOneTest,model,_p2._0);
-         case "RunAllTests": return runAllTests(model);
-         default: return initialModel;}
+      {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+         case "RunTest": return {ctor: "_Tuple2",_0: A2(runOneTest,model,_p2._0),_1: $Effects.none};
+         case "RunAllTests": return {ctor: "_Tuple2",_0: runAllTests(model),_1: $Effects.none};
+         default: return {ctor: "_Tuple2",_0: $Basics.fst(init),_1: $Effects.none};}
    });
-   var main = $StartApp$Simple.start({model: initialModel,view: view,update: update});
+   var app = $StartApp.start({init: init,update: update,view: view,inputs: _U.list([])});
+   var main = app.html;
+   var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",app.tasks);
    return _elm.TestRunner.values = {_op: _op
                                    ,Pending: Pending
                                    ,Running: Running
@@ -144,7 +151,7 @@ Elm.TestRunner.make = function (_elm) {
                                    ,runOneTest: runOneTest
                                    ,Test: Test
                                    ,Model: Model
-                                   ,initialModel: initialModel
+                                   ,init: init
                                    ,classify: classify
                                    ,pageHeader: pageHeader
                                    ,testRow: testRow
@@ -159,5 +166,6 @@ Elm.TestRunner.make = function (_elm) {
                                    ,RunAllTests: RunAllTests
                                    ,Reset: Reset
                                    ,update: update
+                                   ,app: app
                                    ,main: main};
 };
