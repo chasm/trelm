@@ -10,12 +10,15 @@ import StartApp.Simple as StartApp
 
 type Status = Pending | Running | Passed | Failed
 
+updateTest : Test -> Test
 updateTest test =
   { test | status = if test.id % 3 == 2 then Failed else Passed }
 
+runAllTests : Model -> Model
 runAllTests model =
   { model | tests = (List.map updateTest model.tests) }
 
+runOneTest : Model -> Int -> Model
 runOneTest model id =
   let
     runTest id test =
@@ -28,6 +31,18 @@ runOneTest model id =
 
 -- MODEL
 
+type alias Test =
+  { id: Int,
+    status: Status,
+    description: String
+  }
+
+type alias Model =
+  {
+    tests: List Test
+  }
+
+initialModel : Model
 initialModel =
   { tests =
     [
@@ -40,6 +55,7 @@ initialModel =
     ]
   }
 
+classify : Status -> String
 classify status =
   case status of
     Running ->
@@ -53,6 +69,7 @@ classify status =
 
 -- VIEW
 
+pageHeader : Signal.Address Action -> Html
 pageHeader address =
   div [ ]
     [ button
@@ -64,6 +81,7 @@ pageHeader address =
       h1 [ ] [ text "Test Runner"]
     ]
 
+testRow : Signal.Address Action -> Test -> Html
 testRow address test =
   tr [ class (classify test.status) ]
     [
@@ -81,27 +99,32 @@ testRow address test =
       td [ class "status" ] [ text (toString test.status) ]
     ]
 
+testRows : Signal.Address Action -> List Test -> List Html
 testRows address tests =
   List.map (testRow address) tests
 
-testCount tests =
+type alias Totals = { running: Int, failed: Int, passed: Int, pending: Int }
+
+testTotals : List Test -> Totals
+testTotals tests =
   let
-    incrementCount test count =
+    incrementTotals test totals =
       case test.status of
         Running ->
-          { count | running = count.running + 1 }
+          { totals | running = totals.running + 1 }
         Failed ->
-          { count | failed = count.failed + 1 }
+          { totals | failed = totals.failed + 1 }
         Passed ->
-          { count | passed = count.passed + 1 }
+          { totals | passed = totals.passed + 1 }
         Pending ->
-          { count | pending = count.pending + 1 }
+          { totals | pending = totals.pending + 1 }
   in
-    List.foldl incrementCount { running = 0, failed = 0, passed = 0, pending = 0 } tests
+    List.foldl incrementTotals { running = 0, failed = 0, passed = 0, pending = 0 } tests
 
+totalsFoot : List Test -> Html
 totalsFoot tests =
   let
-    count = testCount tests
+    totals = testTotals tests
   in
     tr
       [ class "totals" ]
@@ -109,19 +132,20 @@ totalsFoot tests =
           [ colspan 3 ]
           [ span
               [ class "passed" ]
-              [ text (concat ["Passed: ", (toString count.passed)]) ],
+              [ text (concat ["Passed: ", (toString totals.passed)]) ],
             span
               [ class "failed" ]
-              [ text (concat ["Failed: ", (toString count.failed)]) ],
+              [ text (concat ["Failed: ", (toString totals.failed)]) ],
             span
               [ class "running" ]
-              [ text (concat ["Running: ", (toString count.running)]) ],
+              [ text (concat ["Running: ", (toString totals.running)]) ],
             span
               [ class "pending" ]
-              [ text (concat ["Pending: ", (toString count.pending)]) ]
+              [ text (concat ["Pending: ", (toString totals.pending)]) ]
           ]
       ]
 
+testTable : Signal.Address Action -> Model -> Html
 testTable address model =
   table [ class "table table-striped table-bordered table-hover tests" ]
     [ thead
@@ -141,6 +165,7 @@ testTable address model =
         [ (totalsFoot model.tests) ]
     ]
 
+view : Signal.Address Action -> Model -> Html
 view address model =
   div
     [ class "container" ]
@@ -160,6 +185,7 @@ type Action
   | RunAllTests
   | Reset
 
+update : Action -> Model -> Model
 update action model =
   case action of
     NoOp ->
@@ -174,7 +200,7 @@ update action model =
     Reset ->
       initialModel
 
-
+main : Signal Html
 main =
   StartApp.start
     { model = initialModel,

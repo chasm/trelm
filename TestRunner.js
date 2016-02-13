@@ -10341,36 +10341,37 @@ Elm.TestRunner.make = function (_elm) {
    var RunAllTests = {ctor: "RunAllTests"};
    var RunTest = function (a) {    return {ctor: "RunTest",_0: a};};
    var NoOp = {ctor: "NoOp"};
-   var testCount = function (tests) {
-      var incrementCount = F2(function (test,count) {
+   var testTotals = function (tests) {
+      var incrementTotals = F2(function (test,totals) {
          var _p0 = test.status;
          switch (_p0.ctor)
-         {case "Running": return _U.update(count,{running: count.running + 1});
-            case "Failed": return _U.update(count,{failed: count.failed + 1});
-            case "Passed": return _U.update(count,{passed: count.passed + 1});
-            default: return _U.update(count,{pending: count.pending + 1});}
+         {case "Running": return _U.update(totals,{running: totals.running + 1});
+            case "Failed": return _U.update(totals,{failed: totals.failed + 1});
+            case "Passed": return _U.update(totals,{passed: totals.passed + 1});
+            default: return _U.update(totals,{pending: totals.pending + 1});}
       });
-      return A3($List.foldl,incrementCount,{running: 0,failed: 0,passed: 0,pending: 0},tests);
+      return A3($List.foldl,incrementTotals,{running: 0,failed: 0,passed: 0,pending: 0},tests);
    };
    var totalsFoot = function (tests) {
-      var count = testCount(tests);
+      var totals = testTotals(tests);
       return A2($Html.tr,
       _U.list([$Html$Attributes.$class("totals")]),
       _U.list([A2($Html.td,
       _U.list([$Html$Attributes.colspan(3)]),
       _U.list([A2($Html.span,
               _U.list([$Html$Attributes.$class("passed")]),
-              _U.list([$Html.text($String.concat(_U.list(["Passed: ",$Basics.toString(count.passed)])))]))
+              _U.list([$Html.text($String.concat(_U.list(["Passed: ",$Basics.toString(totals.passed)])))]))
               ,A2($Html.span,
               _U.list([$Html$Attributes.$class("failed")]),
-              _U.list([$Html.text($String.concat(_U.list(["Failed: ",$Basics.toString(count.failed)])))]))
+              _U.list([$Html.text($String.concat(_U.list(["Failed: ",$Basics.toString(totals.failed)])))]))
               ,A2($Html.span,
               _U.list([$Html$Attributes.$class("running")]),
-              _U.list([$Html.text($String.concat(_U.list(["Running: ",$Basics.toString(count.running)])))]))
+              _U.list([$Html.text($String.concat(_U.list(["Running: ",$Basics.toString(totals.running)])))]))
               ,A2($Html.span,
               _U.list([$Html$Attributes.$class("pending")]),
-              _U.list([$Html.text($String.concat(_U.list(["Pending: ",$Basics.toString(count.pending)])))]))]))]));
+              _U.list([$Html.text($String.concat(_U.list(["Pending: ",$Basics.toString(totals.pending)])))]))]))]));
    };
+   var Totals = F4(function (a,b,c,d) {    return {running: a,failed: b,passed: c,pending: d};});
    var pageHeader = function (address) {
       return A2($Html.div,
       _U.list([]),
@@ -10390,9 +10391,11 @@ Elm.TestRunner.make = function (_elm) {
          case "Failed": return "danger";
          default: return "";}
    };
+   var Model = function (a) {    return {tests: a};};
+   var Test = F3(function (a,b,c) {    return {id: a,status: b,description: c};});
    var Failed = {ctor: "Failed"};
    var Passed = {ctor: "Passed"};
-   var updateTest = function (test) {    return _U.update(test,{status: _U.eq(A2($Basics._op["%"],test.id,3),1) ? Failed : Passed});};
+   var updateTest = function (test) {    return _U.update(test,{status: _U.eq(A2($Basics._op["%"],test.id,3),2) ? Failed : Passed});};
    var runAllTests = function (model) {    return _U.update(model,{tests: A2($List.map,updateTest,model.tests)});};
    var runOneTest = F2(function (model,id) {
       var runTest = F2(function (id,test) {    return _U.eq(test.id,id) ? updateTest(test) : test;});
@@ -10460,12 +10463,15 @@ Elm.TestRunner.make = function (_elm) {
                                    ,updateTest: updateTest
                                    ,runAllTests: runAllTests
                                    ,runOneTest: runOneTest
+                                   ,Test: Test
+                                   ,Model: Model
                                    ,initialModel: initialModel
                                    ,classify: classify
                                    ,pageHeader: pageHeader
                                    ,testRow: testRow
                                    ,testRows: testRows
-                                   ,testCount: testCount
+                                   ,Totals: Totals
+                                   ,testTotals: testTotals
                                    ,totalsFoot: totalsFoot
                                    ,testTable: testTable
                                    ,view: view
