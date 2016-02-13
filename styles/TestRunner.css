@@ -1,0 +1,55 @@
+table.tests tbody tr td {
+  vertical-align: middle;
+}
+
+th.controls,
+td.controls {
+  text-align: center;
+  width: 80px;
+}
+
+th.status,
+td.status {
+  text-align: center;
+  width: 120px;
+}
+
+td.status {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+tr.success td.status,
+tr.success td.description {
+  color: black;
+}
+
+td.description {
+  font-size: 120%;
+}
+
+tr.totals td {
+  font-size: 140%;
+  text-align: right;
+}
+
+tr.totals span {
+  display: inline-block;
+  padding: 0 15px;
+}
+
+tr.totals span.running {
+  color: #faa123;
+}
+
+tr.totals span.passed {
+  color: #62c462;
+}
+
+tr.totals span.failed {
+  color: #ee5f5b;
+}
+
+tr.totals span.pending {
+  color: #5bc0de;
+}

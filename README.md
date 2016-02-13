@@ -1,2 +1,3 @@
-# trelm
-The TR in Elm
+# Trelm
+
+The Test Runner in Elm.
