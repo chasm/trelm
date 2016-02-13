@@ -10390,13 +10390,24 @@ Elm.TestRunner.make = function (_elm) {
          case "Failed": return "danger";
          default: return "";}
    };
+   var Failed = {ctor: "Failed"};
+   var Passed = {ctor: "Passed"};
+   var updateTest = function (test) {    return _U.update(test,{status: _U.eq(A2($Basics._op["%"],test.id,3),1) ? Failed : Passed});};
+   var runAllTests = function (model) {    return _U.update(model,{tests: A2($List.map,updateTest,model.tests)});};
+   var runOneTest = F2(function (model,id) {
+      var runTest = F2(function (id,test) {    return _U.eq(test.id,id) ? updateTest(test) : test;});
+      return _U.update(model,{tests: A2($List.map,runTest(id),model.tests)});
+   });
+   var Running = {ctor: "Running"};
    var testRow = F2(function (address,test) {
       return A2($Html.tr,
       _U.list([$Html$Attributes.$class(classify(test.status))]),
       _U.list([A2($Html.td,
               _U.list([$Html$Attributes.$class("controls")]),
               _U.list([A2($Html.button,
-              _U.list([$Html$Attributes.$class("btn btn-sm btn-info"),A2($Html$Events.onClick,address,RunTest(test.id))]),
+              _U.list([$Html$Attributes.classList(_U.list([{ctor: "_Tuple2",_0: "btn btn-sm btn-info",_1: true}
+                                                          ,{ctor: "_Tuple2",_0: "disabled",_1: _U.eq(test.status,Running)}]))
+                      ,A2($Html$Events.onClick,address,RunTest(test.id))]),
               _U.list([$Html.text("Run")]))]))
               ,A2($Html.td,_U.list([$Html$Attributes.$class("description")]),_U.list([$Html.text(test.description)]))
               ,A2($Html.td,_U.list([$Html$Attributes.$class("status")]),_U.list([$Html.text($Basics.toString(test.status))]))]));
@@ -10425,15 +10436,6 @@ Elm.TestRunner.make = function (_elm) {
               _U.list([$Html$Attributes.$class("row")]),
               _U.list([A2($Html.div,_U.list([$Html$Attributes.$class("col-xs-12")]),_U.list([A2(testTable,address,model)]))]))]));
    });
-   var Failed = {ctor: "Failed"};
-   var updateTest = function (test) {    return _U.update(test,{status: Failed});};
-   var runAllTests = function (model) {    return _U.update(model,{tests: A2($List.map,updateTest,model.tests)});};
-   var runOneTest = F2(function (model,id) {
-      var runTest = F2(function (id,test) {    return _U.eq(test.id,id) ? updateTest(test) : test;});
-      return _U.update(model,{tests: A2($List.map,runTest(id),model.tests)});
-   });
-   var Passed = {ctor: "Passed"};
-   var Running = {ctor: "Running"};
    var Pending = {ctor: "Pending"};
    var initialModel = {tests: _U.list([{id: 1,status: Pending,description: "commas are rotated properly"}
                                       ,{id: 2,status: Pending,description: "exclamation points stand up straight"}

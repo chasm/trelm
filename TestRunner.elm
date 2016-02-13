@@ -11,7 +11,7 @@ import StartApp.Simple as StartApp
 type Status = Pending | Running | Passed | Failed
 
 updateTest test =
-  { test | status = Failed }
+  { test | status = if test.id % 3 == 2 then Failed else Passed }
 
 runAllTests model =
   { model | tests = (List.map updateTest model.tests) }
@@ -70,7 +70,12 @@ testRow address test =
       td
         [ class "controls" ]
         [ button
-            [ class "btn btn-sm btn-info", onClick address (RunTest test.id) ]
+            [ classList [
+                ("btn btn-sm btn-info", True),
+                ("disabled", (test.status == Running))
+              ],
+              onClick address (RunTest test.id)
+            ]
             [ text "Run" ] ],
       td [ class "description" ] [ text test.description ],
       td [ class "status" ] [ text (toString test.status) ]
@@ -139,8 +144,12 @@ testTable address model =
 view address model =
   div
     [ class "container" ]
-    [ div [ class "row" ] [ div [ class "col-xs-12" ] [ (pageHeader address) ] ],
-      div [ class "row" ] [ div [ class "col-xs-12" ] [ (testTable address model) ] ]
+    [ div
+        [ class "row" ]
+        [ div [ class "col-xs-12" ] [ (pageHeader address) ] ],
+      div
+        [ class "row" ]
+        [ div [ class "col-xs-12" ] [ (testTable address model) ] ]
     ]
 
 -- UPDATE
