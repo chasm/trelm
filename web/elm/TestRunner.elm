@@ -10,6 +10,11 @@ import StartApp
 import Effects exposing (Effects, Never)
 import Task exposing (Task)
 
+import Http
+import Json.Decode as Json exposing ((:=))
+
+import Debug
+
 type Status = Pending | Running | Passed | Failed
 
 updateTest : Test -> Test
@@ -18,7 +23,7 @@ updateTest test =
 
 runAllTests : Model -> Model
 runAllTests model =
-  { model | tests = (List.map updateTest model.tests) }
+  List.map updateTest model
 
 runOneTest : Model -> Int -> Model
 runOneTest model id =
@@ -29,56 +34,22 @@ runOneTest model id =
       else
         test
   in
-    { model | tests = (List.map (runTest id) model.tests) }
+    List.map (runTest id) model
 
 -- MODEL
 
 type alias Test =
   { id: Int
-  , status: Status
   , description: String
+  , test: Maybe String
+  , status: Status
   }
 
-type alias Model =
-  {
-    tests: List Test
-  }
+type alias Model = List Test
 
 init : (Model, Effects Action)
 init =
-  let
-    model =
-      {
-        tests =
-          [
-            { id = 1
-            , status = Pending
-            , description = "commas are rotated properly"
-            },
-            { id = 2
-            , status = Pending
-            , description = "exclamation points stand up straight"
-            },
-            { id = 3
-            , status = Pending
-            , description = "run-on sentences don't run forever"
-            },
-            { id = 4
-            , status = Pending
-            , description = "question marks curl down, not up"
-            },
-            { id = 5
-            , status = Pending
-            , description = "semicolons are adequately waterproof"
-            },
-            { id = 6
-            , status = Pending
-            , description = "capital letters can do yoga"
-            }
-          ]
-      }
-  in
-    (model, Effects.none)
+  ([], fetchTests)
 
 classify : Status -> String
 classify status =
@@ -184,10 +155,10 @@ testTable address model =
         ]
     , tbody
         [ ]
-        (testRows address model.tests)
+        (testRows address model)
     , tfoot
         [ ]
-        [ (totalsFoot model.tests) ]
+        [ (totalsFoot model) ]
     ]
 
 view : Signal.Address Action -> Model -> Html
@@ -206,15 +177,26 @@ view address model =
 
 type Action
   = NoOp
+  | SetTests (Maybe Model)
   | RunTest Int
   | RunAllTests
   | Reset
+
+defaultModel : Model
+defaultModel =
+  [{id = 0, description = "hi", test = (Just "yo"), status = Pending}]
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp ->
       (model, Effects.none)
+
+    SetTests tests ->
+      let
+        newModel = Maybe.withDefault defaultModel tests
+      in
+        (newModel, Effects.none)
 
     RunTest id ->
       (runOneTest model id, Effects.none)
@@ -242,3 +224,24 @@ main =
 port tasks : Signal (Task Never ())
 port tasks =
   app.tasks
+
+-- EFFECTS
+
+fetchTests: Effects Action
+fetchTests =
+  Http.get decodeTests "http://localhost:4000/api/tests"
+    |> Task.toMaybe
+    |> Task.map SetTests
+    |> Effects.task
+
+
+decodeTests: Json.Decoder Model
+decodeTests =
+  let
+    test =
+      Json.object3 (\id description test -> (Test id description test Pending))
+        ("id" := Json.int)
+        ("description" := Json.string)
+        (Json.maybe ("test" := Json.string))
+  in
+    Json.at ["data"] (Json.list test)

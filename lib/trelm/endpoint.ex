@@ -35,5 +35,7 @@ defmodule Trelm.Endpoint do
     key: "_trelm_key",
     signing_salt: "fFYyN59L"
 
+  plug CORSPlug
+
   plug Trelm.Router
 end

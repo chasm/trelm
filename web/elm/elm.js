@@ -11107,13 +11107,13 @@ Elm.TestRunner.make = function (_elm) {
               _U.list([A2($Html.div,_U.list([$Html$Attributes.$class("col-xs-12")]),_U.list([A2(testTable,address,model)]))]))]));
    });
    var Pending = {ctor: "Pending"};
-   var defaultModel = _U.list([{id: 0,description: "hi",test: $Maybe.Just("yo"),status: Pending}]);
+   var defaultModel = _U.list([{id: 0,description: "hi",test: "yo",status: Pending}]);
    var decodeTests = function () {
       var test = A4($Json$Decode.object3,
-      F3(function (id,description,test) {    return A4(Test,id,description,test,Pending);}),
+      F3(function (id,description,test) {    return A4(Test,id,description,"",Pending);}),
       A2($Json$Decode._op[":="],"id",$Json$Decode.$int),
       A2($Json$Decode._op[":="],"description",$Json$Decode.string),
-      $Json$Decode.maybe(A2($Json$Decode._op[":="],"test",$Json$Decode.string)));
+      A2($Json$Decode._op[":="],"test",$Json$Decode.string));
       return A2($Json$Decode.at,_U.list(["data"]),$Json$Decode.list(test));
    }();
    var fetchTests = $Effects.task(A2($Task.map,SetTests,$Task.toMaybe(A2($Http.get,decodeTests,"http://localhost:4000/api/tests"))));
