@@ -1,15 +1,36 @@
 # Trelm
 
-To start your Phoenix app:
+You'll need Elixir, Elm, Phoenix, and PostgreSQL.
 
-  * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.create && mix ecto.migrate`
-  * Install Node.js dependencies with `npm install`
-  * Start Phoenix endpoint with `mix phoenix.server`
+To start the Phoenix app:
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+```sh
+mix deps.get
+mix ecto.create && mix ecto.migrate
+npm install
+```
 
-Ready to run in production? Please [check our deployment guides](http://www.phoenixframework.org/docs/deployment).
+To set up Elm:
+
+```sh
+cd web/elm
+elm package install -y
+cd ../..
+```
+
+Then run the server with:
+
+```sh
+mix phoenix.server
+```
+
+Or:
+
+```sh
+iex -S mix phoenix.server
+```
+
+Now you can visit [`localhost:4000`](http://localhost:4000) from the browser.
 
 ## Learn more
 
