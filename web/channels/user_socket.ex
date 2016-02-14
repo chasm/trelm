@@ -3,6 +3,7 @@ defmodule Trelm.UserSocket do
 
   ## Channels
   # channel "rooms:*", Trelm.RoomChannel
+  channel "tests:runner", Trelm.TestChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
