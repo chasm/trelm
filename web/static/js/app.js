@@ -22,5 +22,16 @@ import 'phoenix_html'
 
 import socket from "./socket"
 
+let channel = socket.channel("tests:runner", {})
+
+channel.join()
+  .receive("ok", resp => { console.log("Joined successfully", resp) })
+  .receive("error", resp => { console.log("Unable to join", resp) })
+
+channel.on('set_tests', data => {
+  elmApp.ports.testLists.send(data.tests)
+})
+
 var elmDiv = document.getElementById('elm-main')
-var elmApp = Elm.embed(Elm.TestRunner, elmDiv)
+var initialState = { testLists: [] }
+var elmApp = Elm.embed(Elm.TestRunner, elmDiv, initialState)

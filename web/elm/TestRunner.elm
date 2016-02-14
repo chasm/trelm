@@ -14,11 +14,11 @@ type Status = Pending | Running | Passed | Failed
 
 updateTest : Test -> Test
 updateTest test =
-  { test | status = if test.id % 3 == 2 then Failed else Passed }
+  { test | status = if test.id % 3 == 2 then "FAILED" else "PASSED" }
 
 runAllTests : Model -> Model
 runAllTests model =
-  { model | tests = (List.map updateTest model.tests) }
+  List.map updateTest model
 
 runOneTest : Model -> Int -> Model
 runOneTest model id =
@@ -29,67 +29,33 @@ runOneTest model id =
       else
         test
   in
-    { model | tests = (List.map (runTest id) model.tests) }
+    List.map (runTest id) model
 
 -- MODEL
 
 type alias Test =
   { id: Int
-  , status: Status
+  , test: String
   , description: String
+  , status: String
   }
 
-type alias Model =
-  {
-    tests: List Test
-  }
+type alias Model = List Test
 
 init : (Model, Effects Action)
 init =
-  let
-    model =
-      {
-        tests =
-          [
-            { id = 1
-            , status = Pending
-            , description = "commas are rotated properly"
-            },
-            { id = 2
-            , status = Pending
-            , description = "exclamation points stand up straight"
-            },
-            { id = 3
-            , status = Pending
-            , description = "run-on sentences don't run forever"
-            },
-            { id = 4
-            , status = Pending
-            , description = "question marks curl down, not up"
-            },
-            { id = 5
-            , status = Pending
-            , description = "semicolons are adequately waterproof"
-            },
-            { id = 6
-            , status = Pending
-            , description = "capital letters can do yoga"
-            }
-          ]
-      }
-  in
-    (model, Effects.none)
+  ([], Effects.none)
 
-classify : Status -> String
+classify : String -> String
 classify status =
   case status of
-    Running ->
+    "RUNNING" ->
       "warning"
-    Passed ->
+    "PASSED" ->
       "success"
-    Failed ->
+    "FAILED" ->
       "danger"
-    Pending ->
+    _ ->
       ""
 
 -- VIEW
@@ -115,13 +81,14 @@ testRow address test =
         [ button
             [ classList [
                 ("btn btn-sm btn-info", True),
-                ("disabled", (test.status == Running))
+                ("disabled", (test.status == "RUNNING"))
               ]
             , onClick address (RunTest test.id)
             ]
             [ text "Run" ] ]
     , td [ class "description" ] [ text test.description ]
-    , td [ class "status" ] [ text (toString test.status) ]
+    , td [ class "test" ] [ text test.test ]
+    , td [ class "status" ] [ text test.status ]
     ]
 
 testRows : Signal.Address Action -> List Test -> List Html
@@ -135,13 +102,13 @@ testTotals tests =
   let
     incrementTotals test totals =
       case test.status of
-        Running ->
+        "RUNNING" ->
           { totals | running = totals.running + 1 }
-        Failed ->
+        "FAILED" ->
           { totals | failed = totals.failed + 1 }
-        Passed ->
+        "PASSED" ->
           { totals | passed = totals.passed + 1 }
-        Pending ->
+        _ ->
           { totals | pending = totals.pending + 1 }
   in
     List.foldl incrementTotals { running = 0, failed = 0, passed = 0, pending = 0 } tests
@@ -178,16 +145,17 @@ testTable address model =
         [ tr
             [ ]
             [ th [ class "controls" ] [ ]
-            , th [ class "description" ] [ text "Test" ]
+            , th [ class "description" ] [ text "Description" ]
+            , th [ class "test" ] [ text "Test" ]
             , th [ class "status" ] [ text "Status" ]
             ]
         ]
     , tbody
         [ ]
-        (testRows address model.tests)
+        (testRows address model)
     , tfoot
         [ ]
-        [ (totalsFoot model.tests) ]
+        [ (totalsFoot model) ]
     ]
 
 view : Signal.Address Action -> Model -> Html
@@ -206,6 +174,7 @@ view address model =
 
 type Action
   = NoOp
+  | SetTests Model
   | RunTest Int
   | RunAllTests
   | Reset
@@ -214,6 +183,9 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp ->
+      (model, Effects.none)
+
+    SetTests model ->
       (model, Effects.none)
 
     RunTest id ->
@@ -232,7 +204,7 @@ app =
     { init = init
     , update = update
     , view = view
-    , inputs = []
+    , inputs = [ incomingActions ]
     }
 
 main : Signal Html
@@ -242,3 +214,11 @@ main =
 port tasks : Signal (Task Never ())
 port tasks =
   app.tasks
+
+-- SIGNALS
+
+port testLists : Signal Model
+
+incomingActions: Signal Action
+incomingActions =
+  Signal.map SetTests testLists

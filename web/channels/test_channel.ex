@@ -3,10 +3,17 @@ defmodule Trelm.TestChannel do
 
   def join("tests:runner", payload, socket) do
     if authorized?(payload) do
+      send self(), :after_join
       {:ok, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
+  end
+
+  def handle_info(:after_join, socket) do
+    tests = (from t in Trelm.Test, order_by: [asc: t.id]) |> Repo.all
+    push socket, "set_tests", %{tests: tests}
+    {:noreply, socket}
   end
 
   # Channels can be used in a request/response fashion

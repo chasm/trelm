@@ -22,3 +22,12 @@ defmodule Trelm.Test do
     |> cast(params, @required_fields, @optional_fields)
   end
 end
+
+defimpl Poison.Encoder, for: Trelm.Test do
+  def encode(model, opts) do
+    %{id: model.id,
+      description: model.description,
+      test: model.test || "",
+      status: "PENDING"} |> Poison.Encoder.encode(opts)
+  end
+end

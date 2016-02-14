@@ -18,17 +18,35 @@ Elm.TestRunner.make = function (_elm) {
    $String = Elm.String.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
+   var testLists = Elm.Native.Port.make(_elm).inboundSignal("testLists",
+   "TestRunner.Model",
+   function (v) {
+      return typeof v === "object" && v instanceof Array ? Elm.Native.List.make(_elm).fromArray(v.map(function (v) {
+         return typeof v === "object" && "id" in v && "test" in v && "description" in v && "status" in v ? {_: {}
+                                                                                                           ,id: typeof v.id === "number" && isFinite(v.id) && Math.floor(v.id) === v.id ? v.id : _U.badPort("an integer",
+                                                                                                           v.id)
+                                                                                                           ,test: typeof v.test === "string" || typeof v.test === "object" && v.test instanceof String ? v.test : _U.badPort("a string",
+                                                                                                           v.test)
+                                                                                                           ,description: typeof v.description === "string" || typeof v.description === "object" && v.description instanceof String ? v.description : _U.badPort("a string",
+                                                                                                           v.description)
+                                                                                                           ,status: typeof v.status === "string" || typeof v.status === "object" && v.status instanceof String ? v.status : _U.badPort("a string",
+                                                                                                           v.status)} : _U.badPort("an object with fields `id`, `test`, `description`, `status`",
+         v);
+      })) : _U.badPort("an array",v);
+   });
    var Reset = {ctor: "Reset"};
    var RunAllTests = {ctor: "RunAllTests"};
    var RunTest = function (a) {    return {ctor: "RunTest",_0: a};};
+   var SetTests = function (a) {    return {ctor: "SetTests",_0: a};};
+   var incomingActions = A2($Signal.map,SetTests,testLists);
    var NoOp = {ctor: "NoOp"};
    var testTotals = function (tests) {
       var incrementTotals = F2(function (test,totals) {
          var _p0 = test.status;
-         switch (_p0.ctor)
-         {case "Running": return _U.update(totals,{running: totals.running + 1});
-            case "Failed": return _U.update(totals,{failed: totals.failed + 1});
-            case "Passed": return _U.update(totals,{passed: totals.passed + 1});
+         switch (_p0)
+         {case "RUNNING": return _U.update(totals,{running: totals.running + 1});
+            case "FAILED": return _U.update(totals,{failed: totals.failed + 1});
+            case "PASSED": return _U.update(totals,{passed: totals.passed + 1});
             default: return _U.update(totals,{pending: totals.pending + 1});}
       });
       return A3($List.foldl,incrementTotals,{running: 0,failed: 0,passed: 0,pending: 0},tests);
@@ -66,23 +84,12 @@ Elm.TestRunner.make = function (_elm) {
    };
    var classify = function (status) {
       var _p1 = status;
-      switch (_p1.ctor)
-      {case "Running": return "warning";
-         case "Passed": return "success";
-         case "Failed": return "danger";
+      switch (_p1)
+      {case "RUNNING": return "warning";
+         case "PASSED": return "success";
+         case "FAILED": return "danger";
          default: return "";}
    };
-   var Model = function (a) {    return {tests: a};};
-   var Test = F3(function (a,b,c) {    return {id: a,status: b,description: c};});
-   var Failed = {ctor: "Failed"};
-   var Passed = {ctor: "Passed"};
-   var updateTest = function (test) {    return _U.update(test,{status: _U.eq(A2($Basics._op["%"],test.id,3),2) ? Failed : Passed});};
-   var runAllTests = function (model) {    return _U.update(model,{tests: A2($List.map,updateTest,model.tests)});};
-   var runOneTest = F2(function (model,id) {
-      var runTest = F2(function (id,test) {    return _U.eq(test.id,id) ? updateTest(test) : test;});
-      return _U.update(model,{tests: A2($List.map,runTest(id),model.tests)});
-   });
-   var Running = {ctor: "Running"};
    var testRow = F2(function (address,test) {
       return A2($Html.tr,
       _U.list([$Html$Attributes.$class(classify(test.status))]),
@@ -90,11 +97,12 @@ Elm.TestRunner.make = function (_elm) {
               _U.list([$Html$Attributes.$class("controls")]),
               _U.list([A2($Html.button,
               _U.list([$Html$Attributes.classList(_U.list([{ctor: "_Tuple2",_0: "btn btn-sm btn-info",_1: true}
-                                                          ,{ctor: "_Tuple2",_0: "disabled",_1: _U.eq(test.status,Running)}]))
+                                                          ,{ctor: "_Tuple2",_0: "disabled",_1: _U.eq(test.status,"RUNNING")}]))
                       ,A2($Html$Events.onClick,address,RunTest(test.id))]),
               _U.list([$Html.text("Run")]))]))
               ,A2($Html.td,_U.list([$Html$Attributes.$class("description")]),_U.list([$Html.text(test.description)]))
-              ,A2($Html.td,_U.list([$Html$Attributes.$class("status")]),_U.list([$Html.text($Basics.toString(test.status))]))]));
+              ,A2($Html.td,_U.list([$Html$Attributes.$class("test")]),_U.list([$Html.text(test.test)]))
+              ,A2($Html.td,_U.list([$Html$Attributes.$class("status")]),_U.list([$Html.text(test.status)]))]));
    });
    var testRows = F2(function (address,tests) {    return A2($List.map,testRow(address),tests);});
    var testTable = F2(function (address,model) {
@@ -105,10 +113,11 @@ Elm.TestRunner.make = function (_elm) {
               _U.list([A2($Html.tr,
               _U.list([]),
               _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("controls")]),_U.list([]))
-                      ,A2($Html.th,_U.list([$Html$Attributes.$class("description")]),_U.list([$Html.text("Test")]))
+                      ,A2($Html.th,_U.list([$Html$Attributes.$class("description")]),_U.list([$Html.text("Description")]))
+                      ,A2($Html.th,_U.list([$Html$Attributes.$class("test")]),_U.list([$Html.text("Test")]))
                       ,A2($Html.th,_U.list([$Html$Attributes.$class("status")]),_U.list([$Html.text("Status")]))]))]))
-              ,A2($Html.tbody,_U.list([]),A2(testRows,address,model.tests))
-              ,A2($Html.tfoot,_U.list([]),_U.list([totalsFoot(model.tests)]))]));
+              ,A2($Html.tbody,_U.list([]),A2(testRows,address,model))
+              ,A2($Html.tfoot,_U.list([]),_U.list([totalsFoot(model)]))]));
    });
    var view = F2(function (address,model) {
       return A2($Html.div,
@@ -120,27 +129,30 @@ Elm.TestRunner.make = function (_elm) {
               _U.list([$Html$Attributes.$class("row")]),
               _U.list([A2($Html.div,_U.list([$Html$Attributes.$class("col-xs-12")]),_U.list([A2(testTable,address,model)]))]))]));
    });
-   var Pending = {ctor: "Pending"};
-   var init = function () {
-      var model = {tests: _U.list([{id: 1,status: Pending,description: "commas are rotated properly"}
-                                  ,{id: 2,status: Pending,description: "exclamation points stand up straight"}
-                                  ,{id: 3,status: Pending,description: "run-on sentences don\'t run forever"}
-                                  ,{id: 4,status: Pending,description: "question marks curl down, not up"}
-                                  ,{id: 5,status: Pending,description: "semicolons are adequately waterproof"}
-                                  ,{id: 6,status: Pending,description: "capital letters can do yoga"}])};
-      return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-   }();
+   var init = {ctor: "_Tuple2",_0: _U.list([]),_1: $Effects.none};
+   var Test = F4(function (a,b,c,d) {    return {id: a,test: b,description: c,status: d};});
+   var updateTest = function (test) {    return _U.update(test,{status: _U.eq(A2($Basics._op["%"],test.id,3),2) ? "FAILED" : "PASSED"});};
+   var runAllTests = function (model) {    return A2($List.map,updateTest,model);};
+   var runOneTest = F2(function (model,id) {
+      var runTest = F2(function (id,test) {    return _U.eq(test.id,id) ? updateTest(test) : test;});
+      return A2($List.map,runTest(id),model);
+   });
    var update = F2(function (action,model) {
       var _p2 = action;
       switch (_p2.ctor)
       {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+         case "SetTests": return {ctor: "_Tuple2",_0: _p2._0,_1: $Effects.none};
          case "RunTest": return {ctor: "_Tuple2",_0: A2(runOneTest,model,_p2._0),_1: $Effects.none};
          case "RunAllTests": return {ctor: "_Tuple2",_0: runAllTests(model),_1: $Effects.none};
          default: return {ctor: "_Tuple2",_0: $Basics.fst(init),_1: $Effects.none};}
    });
-   var app = $StartApp.start({init: init,update: update,view: view,inputs: _U.list([])});
+   var app = $StartApp.start({init: init,update: update,view: view,inputs: _U.list([incomingActions])});
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",app.tasks);
+   var Failed = {ctor: "Failed"};
+   var Passed = {ctor: "Passed"};
+   var Running = {ctor: "Running"};
+   var Pending = {ctor: "Pending"};
    return _elm.TestRunner.values = {_op: _op
                                    ,Pending: Pending
                                    ,Running: Running
@@ -150,7 +162,6 @@ Elm.TestRunner.make = function (_elm) {
                                    ,runAllTests: runAllTests
                                    ,runOneTest: runOneTest
                                    ,Test: Test
-                                   ,Model: Model
                                    ,init: init
                                    ,classify: classify
                                    ,pageHeader: pageHeader
@@ -162,10 +173,12 @@ Elm.TestRunner.make = function (_elm) {
                                    ,testTable: testTable
                                    ,view: view
                                    ,NoOp: NoOp
+                                   ,SetTests: SetTests
                                    ,RunTest: RunTest
                                    ,RunAllTests: RunAllTests
                                    ,Reset: Reset
                                    ,update: update
                                    ,app: app
-                                   ,main: main};
+                                   ,main: main
+                                   ,incomingActions: incomingActions};
 };
