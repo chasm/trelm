@@ -121,7 +121,7 @@ totalsFoot tests =
     tr
       [ class "totals" ]
       [ td
-          [ colspan 3 ]
+          [ colspan 4 ]
           [ span
               [ class "passed" ]
               [ text (concat ["Passed: ", (toString totals.passed)]) ]
