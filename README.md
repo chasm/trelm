@@ -1,5 +1,7 @@
 # Trelm
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/chasm/trelm.svg)](https://greenkeeper.io/)
+
 You'll need Elixir, Elm, Phoenix, and PostgreSQL.
 
 To start the Phoenix app:
